@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RankPulse — Multi Country SEO Rank Checker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#080810;color:#e2e8f0;font-family:'DM Mono','Courier New',monospace;min-height:100vh;}
+  ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-thumb{background:#222;border-radius:3px;}
+  .inp{background:#111827;border:1px solid #1f2937;border-radius:8px;color:#e2e8f0;padding:10px 14px;width:100%;font-family:inherit;font-size:13px;outline:none;transition:border .2s;}
+  .inp:focus{border-color:#6366f1;}
+  .run-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:10px;color:white;padding:13px 0;width:100%;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .2s,transform .1s;letter-spacing:.5px;}
+  .run-btn:hover{opacity:.88;transform:translateY(-1px);}
+  .run-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+  .sm{background:#161624;border:1px solid #1f2937;border-radius:6px;color:#6b7280;padding:5px 12px;font-family:inherit;font-size:11px;cursor:pointer;transition:all .15s;}
+  .sm:hover{background:#1f2937;color:#d1d5db;}
+  .cb{border-radius:7px;padding:6px 11px;font-family:inherit;font-size:11px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
+  .on{background:#1e1b4b;border-color:#6366f1;color:#a5b4fc;}
+  .off{background:#111827;border-color:#1f2937;color:#4b5563;}
+  .off:hover{border-color:#374151;color:#9ca3af;}
+  .badge{border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;display:inline-block;min-width:50px;text-align:center;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{background:#0c0c1a;color:#4b5563;font-weight:400;padding:11px 14px;text-align:center;border-bottom:1px solid #1a1a2e;position:sticky;top:0;z-index:10;font-size:10px;letter-spacing:1.5px;}
+  th:first-child{text-align:left;}
+  td{padding:11px 14px;border-bottom:1px solid #0d0d18;text-align:center;vertical-align:middle;}
+  td:first-child{text-align:left;}
+  tr:hover td{background:#0d0d1e;}
+  .pbar{height:3px;background:#1f2937;border-radius:99px;overflow:hidden;}
+  .pfill{height:100%;background:linear-gradient(90deg,#6366f1,#a855f7);transition:width .4s;}
+  .pulse{animation:p 1.2s ease-in-out infinite;}
+  @keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+  .layout{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 73px);}
+  .sidebar{background:#0c0c18;border-right:1px solid #13131f;padding:20px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;}
+  .main{overflow-y:auto;background:#080810;}
+  .header{background:linear-gradient(180deg,#0e0920 0%,#080810 100%);border-bottom:1px solid #13131f;padding:18px 28px;display:flex;align-items:center;gap:14px;}
+  @media(max-width:700px){.layout{grid-template-columns:1fr;}.main{min-height:60vh;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef } = React;
+
+const COUNTRIES = [
+  { code:"in",  name:"India",         flag:"🇮🇳" },
+  { code:"au",  name:"Australia",     flag:"🇦🇺" },
+  { code:"us",  name:"United States", flag:"🇺🇸" },
+  { code:"gb",  name:"United Kingdom",flag:"🇬🇧" },
+  { code:"ca",  name:"Canada",        flag:"🇨🇦" },
+  { code:"sg",  name:"Singapore",     flag:"🇸🇬" },
+  { code:"ae",  name:"UAE",           flag:"🇦🇪" },
+  { code:"nz",  name:"New Zealand",   flag:"🇳🇿" },
+  { code:"za",  name:"South Africa",  flag:"🇿🇦" },
+  { code:"de",  name:"Germany",       flag:"🇩🇪" },
+  { code:"fr",  name:"France",        flag:"🇫🇷" },
+  { code:"jp",  name:"Japan",         flag:"🇯🇵" },
+  { code:"br",  name:"Brazil",        flag:"🇧🇷" },
+  { code:"mx",  name:"Mexico",        flag:"🇲🇽" },
+  { code:"ph",  name:"Philippines",   flag:"🇵🇭" },
+  { code:"my",  name:"Malaysia",      flag:"🇲🇾" },
+  { code:"ng",  name:"Nigeria",       flag:"🇳🇬" },
+  { code:"pk",  name:"Pakistan",      flag:"🇵🇰" },
+  { code:"bd",  name:"Bangladesh",    flag:"🇧🇩" },
+  { code:"eg",  name:"Egypt",         flag:"🇪🇬" },
+];
+
+function getBadge(pos) {
+  if (!pos || pos === "NF") return { color:"#6b7280", bg:"#1f2937", label:"NF" };
+  if (pos <= 3)  return { color:"#fbbf24", bg:"#78350f", label:`#${pos}` };
+  if (pos <= 10) return { color:"#34d399", bg:"#064e3b", label:`#${pos}` };
+  if (pos <= 20) return { color:"#60a5fa", bg:"#1e3a5f", label:`#${pos}` };
+  if (pos <= 50) return { color:"#f97316", bg:"#431407", label:`#${pos}` };
+  return { color:"#ef4444", bg:"#450a0a", label:`#${pos}` };
+}
+
+async function checkRank(apiKey, keyword, domain, country) {
+  try {
+    const res = await fetch("https://google.serper.dev/search", {
+      method:"POST",
+      headers:{"X-API-KEY":apiKey,"Content-Type":"application/json"},
+      body:JSON.stringify({q:keyword, gl:country, hl:"en", num:100}),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const items = [...(data.organic||[])];
+    const d = domain.replace(/^https?:\/\//,"").replace(/^www\./,"").toLowerCase().replace(/\/$/,"");
+    for (let i=0;i<items.length;i++){
+      const link=(items[i].link||"").replace(/^https?:\/\//,"").replace(/^www\./,"").toLowerCase();
+      if(link.startsWith(d)) return {position:i+1, url:items[i].link, err:null};
+    }
+    return {position:null, url:null, err:null};
+  } catch(e){
+    return {position:"ERR", url:null, err:e.message};
+  }
+}
+
+function App() {
+  const [apiKey,        setApiKey]        = useState("3f78f3f956a1f5870ad68e644594bced08b52585");
+  const [domain,        setDomain]        = useState("adclickr.com");
+  const [keywords,      setKeywords]      = useState("");
+  const [selCountries,  setSelCountries]  = useState(["in","au","us"]);
+  const [results,       setResults]       = useState([]);
+  const [loading,       setLoading]       = useState(false);
+  const [progress,      setProgress]      = useState({done:0,total:0});
+  const stopRef = useRef(false);
+
+  const toggle = (code) => setSelCountries(p => p.includes(code)?p.filter(c=>c!==code):[...p,code]);
+
+  const run = async () => {
+    const kwList = keywords.split("\n").map(k=>k.trim()).filter(Boolean);
+    if(!kwList.length||!apiKey||!domain||!selCountries.length) return;
+    stopRef.current=false; setLoading(true); setResults([]);
+    const total=kwList.length*selCountries.length;
+    setProgress({done:0,total});
+    const rows=kwList.map(kw=>({keyword:kw, countries:Object.fromEntries(selCountries.map(c=>[c,{position:"...",url:null}]))}));
+    setResults([...rows]);
+    let done=0;
+    for(let ki=0;ki<kwList.length;ki++){
+      for(let ci=0;ci<selCountries.length;ci++){
+        if(stopRef.current){setLoading(false);return;}
+        const r=await checkRank(apiKey,kwList[ki],domain,selCountries[ci]);
+        rows[ki].countries[selCountries[ci]]=r;
+        setResults([...rows]);
+        done++; setProgress({done,total});
+        await new Promise(r=>setTimeout(r,350));
+      }
+    }
+    setLoading(false);
+  };
+
+  const exportCSV = () => {
+    const hdr=["Keyword",...selCountries.map(c=>COUNTRIES.find(x=>x.code===c)?.name)];
+    const rows=results.map(r=>[`"${r.keyword}"`,...selCountries.map(c=>{const p=r.countries[c]?.position;return p===null?"NF":(p||"ERR");})]);
+    const csv=[hdr,...rows].map(r=>r.join(",")).join("\n");
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download=`rankpulse-${domain}-${Date.now()}.csv`; a.click();
+  };
+
+  const kwCount=keywords.split("\n").filter(k=>k.trim()).length;
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="header">
+        <div style={{width:40,height:40,background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>📡</div>
+        <div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,background:"linear-gradient(90deg,#818cf8,#d946ef)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>RankPulse</div>
+          <div style={{fontSize:9,color:"#374151",letterSpacing:3}}>MULTI-COUNTRY SERP TRACKER</div>
+        </div>
+        <div style={{marginLeft:"auto",display:"flex",gap:8}}>
+          {results.length>0 && <button className="sm" onClick={exportCSV}>⬇ Export CSV</button>}
+          {loading && <button className="sm" style={{color:"#f87171",borderColor:"#7f1d1d"}} onClick={()=>stopRef.current=true}>⏹ Stop</button>}
+        </div>
+      </div>
+
+      <div className="layout">
+        {/* Sidebar */}
+        <div className="sidebar">
+          <div>
+            <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5,display:"block",marginBottom:7}}>SERPER.DEV API KEY</label>
+            <input className="inp" type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="API key..."/>
+          </div>
+          <div>
+            <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5,display:"block",marginBottom:7}}>DOMAIN</label>
+            <input className="inp" value={domain} onChange={e=>setDomain(e.target.value)} placeholder="adclickr.com"/>
+            <div style={{fontSize:10,color:"#374151",marginTop:5}}>www mat likho — sirf domain.com</div>
+          </div>
+          <div>
+            <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5,display:"block",marginBottom:7}}>KEYWORDS <span style={{color:"#1f2937",letterSpacing:0}}>(one per line)</span></label>
+            <textarea className="inp" rows={7} value={keywords} onChange={e=>setKeywords(e.target.value)}
+              placeholder={"digital marketing agency jaipur\nseo services india\nweb design company"} style={{resize:"vertical"}}/>
+          </div>
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+              <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5}}>COUNTRIES ({selCountries.length})</label>
+              <div style={{display:"flex",gap:5}}>
+                <button className="sm" onClick={()=>setSelCountries(COUNTRIES.map(c=>c.code))}>All</button>
+                <button className="sm" onClick={()=>setSelCountries([])}>None</button>
+              </div>
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+              {COUNTRIES.map(c=>(
+                <button key={c.code} className={`cb ${selCountries.includes(c.code)?"on":"off"}`} onClick={()=>toggle(c.code)}>
+                  {c.flag} {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          {kwCount>0&&selCountries.length>0&&(
+            <div style={{background:"#111827",border:"1px solid #1f2937",borderRadius:8,padding:"10px 14px",fontSize:11,color:"#6b7280",lineHeight:2}}>
+              <div>🔍 Keywords: <span style={{color:"#818cf8"}}>{kwCount}</span></div>
+              <div>🌍 Countries: <span style={{color:"#818cf8"}}>{selCountries.length}</span></div>
+              <div>💳 Credits: <span style={{color:"#fbbf24"}}>{kwCount*selCountries.length}</span></div>
+            </div>
+          )}
+          <div style={{marginTop:"auto"}}>
+            <button className="run-btn" onClick={run} disabled={loading||!apiKey||!domain||!keywords||!selCountries.length}>
+              {loading?`⏳ ${progress.done}/${progress.total} checking...`:"🚀 Check Rankings"}
+            </button>
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="main">
+          {loading&&(
+            <div style={{padding:"14px 22px",borderBottom:"1px solid #13131f",background:"#0c0c18"}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#4b5563",marginBottom:7}}>
+                <span>Checking rankings...</span>
+                <span style={{color:"#818cf8"}}>{Math.round((progress.done/progress.total)*100)}%</span>
+              </div>
+              <div className="pbar"><div className="pfill" style={{width:`${(progress.done/progress.total)*100}%`}}/></div>
+            </div>
+          )}
+          {results.length===0&&!loading&&(
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"85%",gap:14,color:"#1f2937"}}>
+              <div style={{fontSize:60}}>🌏</div>
+              <div style={{fontFamily:"'Syne',sans-serif",fontSize:18,color:"#374151"}}>Keywords & countries select karo</div>
+              <div style={{fontSize:12,color:"#2d2d3d",textAlign:"center"}}>Phir Check Rankings press karo</div>
+            </div>
+          )}
+          {results.length>0&&(
+            <div style={{overflowX:"auto"}}>
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{minWidth:200,textAlign:"left"}}>KEYWORD</th>
+                    {selCountries.map(cc=>{const c=COUNTRIES.find(x=>x.code===cc);return(
+                      <th key={cc} style={{minWidth:90}}>{c?.flag}<br/><span style={{fontSize:9}}>{c?.name?.toUpperCase()}</span></th>
+                    );})}
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((row,i)=>(
+                    <tr key={i}>
+                      <td style={{color:"#d1d5db",fontWeight:500,wordBreak:"break-word"}}>{row.keyword}</td>
+                      {selCountries.map(cc=>{
+                        const r=row.countries[cc];
+                        const pos=r?.position;
+                        if(pos==="...") return <td key={cc}><span className="badge pulse" style={{color:"#1f2937",background:"#111"}}>···</span></td>;
+                        if(pos==="ERR") return <td key={cc}><span className="badge" style={{color:"#f87171",background:"#1c0505"}}>ERR</span></td>;
+                        if(pos===null)  return <td key={cc}><span className="badge" style={{color:"#4b5563",background:"#111"}}>NF</span></td>;
+                        const b=getBadge(pos);
+                        return(
+                          <td key={cc}>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                              <span className="badge" style={{color:b.color,background:b.bg}}>{b.label}</span>
+                              {r?.url&&<a href={r.url} target="_blank" rel="noreferrer"
+                                style={{fontSize:9,color:"#374151",maxWidth:80,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"block",textDecoration:"none"}} title={r.url}>
+                                {r.url.replace(/^https?:\/\/(www\.)?/,"").substring(0,20)}</a>}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{padding:"12px 22px",display:"flex",gap:10,flexWrap:"wrap",borderTop:"1px solid #111",fontSize:11}}>
+                {[["#fbbf24","#78350f","🥇 1-3"],["#34d399","#064e3b","🟢 4-10"],["#60a5fa","#1e3a5f","🔵 11-20"],["#f97316","#431407","🟠 21-50"],["#ef4444","#450a0a","🔴 50+"],["#4b5563","#111","⚫ NF"]].map(([c,bg,lbl])=>(
+                  <span key={lbl} className="badge" style={{color:c,background:bg,padding:"2px 8px",fontSize:10}}>{lbl}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
