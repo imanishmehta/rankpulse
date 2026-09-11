@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>RankPulse — Australia City Rank Checker</title>
+<title>RankPulse — Country Rank Checker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -45,25 +45,7 @@
 <script type="text/babel">
 const { useState, useRef } = React;
 
-// Australia Cities with state
-const AU_CITIES = [
-  { code:"sydney",     name:"Sydney",     state:"NSW", location:"Sydney,New South Wales,Australia" },
-  { code:"melbourne",  name:"Melbourne",  state:"VIC", location:"Melbourne,Victoria,Australia" },
-  { code:"brisbane",   name:"Brisbane",   state:"QLD", location:"Brisbane,Queensland,Australia" },
-  { code:"perth",      name:"Perth",      state:"WA",  location:"Perth,Western Australia,Australia" },
-  { code:"adelaide",   name:"Adelaide",   state:"SA",  location:"Adelaide,South Australia,Australia" },
-  { code:"gold_coast", name:"Gold Coast", state:"QLD", location:"Gold Coast,Queensland,Australia" },
-  { code:"canberra",   name:"Canberra",   state:"ACT", location:"Canberra,Australian Capital Territory,Australia" },
-  { code:"newcastle",  name:"Newcastle",  state:"NSW", location:"Newcastle,New South Wales,Australia" },
-  { code:"wollongong", name:"Wollongong", state:"NSW", location:"Wollongong,New South Wales,Australia" },
-  { code:"hobart",     name:"Hobart",     state:"TAS", location:"Hobart,Tasmania,Australia" },
-  { code:"geelong",    name:"Geelong",    state:"VIC", location:"Geelong,Victoria,Australia" },
-  { code:"townsville", name:"Townsville", state:"QLD", location:"Townsville,Queensland,Australia" },
-  { code:"cairns",     name:"Cairns",     state:"QLD", location:"Cairns,Queensland,Australia" },
-  { code:"darwin",     name:"Darwin",     state:"NT",  location:"Darwin,Northern Territory,Australia" },
-];
-
-// Other Countries
+// Countries
 const COUNTRIES = [
   { code:"in",  name:"India",         flag:"🇮🇳", location:null },
   { code:"us",  name:"United States", flag:"🇺🇸", location:null },
@@ -114,31 +96,18 @@ function App() {
   const [apiKey,       setApiKey]       = useState("");
   const [domain,       setDomain]       = useState("mimicproductions.com");
   const [keywords,     setKeywords]     = useState("");
-  const [tab,          setTab]          = useState("au"); // "au" or "world"
-  const [selCities,    setSelCities]    = useState(["sydney","melbourne","brisbane","perth","adelaide"]);
   const [selCountries, setSelCountries] = useState(["in","us"]);
   const [results,      setResults]      = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [progress,     setProgress]     = useState({done:0,total:0});
   const stopRef = useRef(false);
 
-  const toggleCity    = (c) => setSelCities(p=>p.includes(c)?p.filter(x=>x!==c):[...p,c]);
   const toggleCountry = (c) => setSelCountries(p=>p.includes(c)?p.filter(x=>x!==c):[...p,c]);
 
-  // Build combined targets based on tab
-  const getTargets = () => {
-    if(tab==="au"){
-      return selCities.map(c=>{
-        const city=AU_CITIES.find(x=>x.code===c);
-        return {id:c, label:`${city.name}`, sublabel:city.state, gl:"au", location:city.location};
-      });
-    } else {
-      return selCountries.map(c=>{
-        const co=COUNTRIES.find(x=>x.code===c);
-        return {id:c, label:`${co.flag} ${co.name}`, sublabel:"", gl:c, location:null};
-      });
-    }
-  };
+  const getTargets = () => selCountries.map(c=>{
+    const co=COUNTRIES.find(x=>x.code===c);
+    return {id:c, label:`${co.flag} ${co.name}`, sublabel:"", gl:c, location:null};
+  });
 
   const run = async () => {
     const kwList=keywords.split("\n").map(k=>k.trim()).filter(Boolean);
@@ -171,7 +140,7 @@ function App() {
     const csv=[hdr,...rows].map(r=>r.join(",")).join("\n");
     const a=document.createElement("a");
     a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-    a.download=`rankpulse-${domain}-${tab}-${Date.now()}.csv`; a.click();
+    a.download=`rankpulse-${domain}-${Date.now()}.csv`; a.click();
   };
 
   const targets=getTargets();
@@ -191,7 +160,7 @@ function App() {
         <div style={{width:38,height:38,background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>📡</div>
         <div>
           <div style={{fontFamily:"'Syne',sans-serif",fontSize:21,fontWeight:800,background:"linear-gradient(90deg,#818cf8,#d946ef)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>RankPulse</div>
-          <div style={{fontSize:9,color:"#374151",letterSpacing:3}}>AUSTRALIA CITY + GLOBAL TRACKER</div>
+          <div style={{fontSize:9,color:"#374151",letterSpacing:3}}>GLOBAL COUNTRY RANK TRACKER</div>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8}}>
           {results.length>0&&<button className="sm" onClick={exportCSV}>⬇ CSV</button>}
@@ -213,58 +182,26 @@ function App() {
           <div>
             <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5,display:"block",marginBottom:7}}>KEYWORDS</label>
             <textarea className="inp" rows={6} value={keywords} onChange={e=>setKeywords(e.target.value)}
-              placeholder={"digital marketing agency\nseo services\nweb design"} style={{resize:"vertical"}}/>
+              placeholder={"video production company\nvideo production services\ncorporate video production"} style={{resize:"vertical"}}/>
           </div>
-
-          {/* Tab Switch */}
-          <div>
-            <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5,display:"block",marginBottom:9}}>TRACK BY</label>
-            <div style={{display:"flex",gap:8}}>
-              <button className={`tab-btn ${tab==="au"?"tab-on":"tab-off"}`} onClick={()=>setTab("au")} style={{flex:1}}>🇦🇺 Australia Cities</button>
-              <button className={`tab-btn ${tab==="world"?"tab-on":"tab-off"}`} onClick={()=>setTab("world")} style={{flex:1}}>🌍 Countries</button>
-            </div>
-          </div>
-
-          {/* Australia Cities */}
-          {tab==="au"&&(
-            <div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
-                <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5}}>CITIES ({selCities.length})</label>
-                <div style={{display:"flex",gap:5}}>
-                  <button className="sm" onClick={()=>setSelCities(AU_CITIES.map(c=>c.code))}>All</button>
-                  <button className="sm" onClick={()=>setSelCities([])}>None</button>
-                </div>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                {AU_CITIES.map(c=>(
-                  <button key={c.code} className={`cb ${selCities.includes(c.code)?"on":"off"}`} onClick={()=>toggleCity(c.code)}>
-                    <span style={{fontWeight:500}}>{c.name}</span>
-                    <span style={{fontSize:9,opacity:.6}}>{c.state}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Countries */}
-          {tab==="world"&&(
-            <div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
-                <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5}}>COUNTRIES ({selCountries.length})</label>
-                <div style={{display:"flex",gap:5}}>
-                  <button className="sm" onClick={()=>setSelCountries(COUNTRIES.map(c=>c.code))}>All</button>
-                  <button className="sm" onClick={()=>setSelCountries([])}>None</button>
-                </div>
-              </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                {COUNTRIES.map(c=>(
-                  <button key={c.code} className={`cb ${selCountries.includes(c.code)?"on":"off"}`} onClick={()=>toggleCountry(c.code)}>
-                    {c.flag} {c.name}
-                  </button>
-                ))}
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+              <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5}}>COUNTRIES ({selCountries.length})</label>
+              <div style={{display:"flex",gap:5}}>
+                <button className="sm" onClick={()=>setSelCountries(COUNTRIES.map(c=>c.code))}>All</button>
+                <button className="sm" onClick={()=>setSelCountries([])}>None</button>
               </div>
             </div>
-          )}
+            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+              {COUNTRIES.map(c=>(
+                <button key={c.code} className={`cb ${selCountries.includes(c.code)?"on":"off"}`} onClick={()=>toggleCountry(c.code)}>
+                  {c.flag} {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {kwCount>0&&targets.length>0&&(
             <div style={{background:"#111827",border:"1px solid #1f2937",borderRadius:8,padding:"10px 14px",fontSize:11,color:"#6b7280",lineHeight:2}}>
@@ -296,10 +233,10 @@ function App() {
           {results.length===0&&!loading&&(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"85%",gap:14}}>
               <div style={{fontSize:56}}>🦘</div>
-              <div style={{fontFamily:"'Syne',sans-serif",fontSize:18,color:"#374151"}}>Australia cities ready!</div>
+              <div style={{fontFamily:"'Syne',sans-serif",fontSize:18,color:"#374151"}}>Ready to track!</div>
               <div style={{fontSize:12,color:"#1f2937",textAlign:"center",lineHeight:1.8}}>
-                Sydney, Melbourne, Brisbane...<br/>
-                <span style={{color:"#2d2d3d"}}>City-level Google rankings track karo</span>
+                India, US, UK, Germany...<br/>
+                <span style={{color:"#2d2d3d"}}>Country-level Google rankings track karo</span>
               </div>
             </div>
           )}
