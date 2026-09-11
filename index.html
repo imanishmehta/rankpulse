@@ -112,7 +112,7 @@ async function checkRank(apiKey, keyword, domain, gl, location) {
 
 function App() {
   const [apiKey,       setApiKey]       = useState("");
-  const [domain,       setDomain]       = useState("adclickr.com");
+  const [domain,       setDomain]       = useState("mimicproductions.com");
   const [keywords,     setKeywords]     = useState("");
   const [tab,          setTab]          = useState("au"); // "au" or "world"
   const [selCities,    setSelCities]    = useState(["sydney","melbourne","brisbane","perth","adelaide"]);
@@ -208,7 +208,7 @@ function App() {
           </div>
           <div>
             <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5,display:"block",marginBottom:7}}>DOMAIN</label>
-            <input className="inp" value={domain} onChange={e=>setDomain(e.target.value)} placeholder="adclickr.com"/>
+            <input className="inp" value={domain} onChange={e=>setDomain(e.target.value)} placeholder="mimicproductions.com"/>
           </div>
           <div>
             <label style={{fontSize:9,color:"#4b5563",letterSpacing:2.5,display:"block",marginBottom:7}}>KEYWORDS</label>
